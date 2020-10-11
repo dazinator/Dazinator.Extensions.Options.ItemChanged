@@ -26,14 +26,16 @@ However suppose when the configuration changes, you want to know which `Thing` i
  You can achieve this by creating your own service that caches your current Options instance, and then whenever you are passed a changed instance from `IOptionsMonitor` - do your own `diffing` mechanism to work out
  what the differences are between the old item and the new item and then take some actions based on those differences.
  
- If your Options instance has a "List" (or Array) of items, and you only care to know what the delta's are between the old and the new version then you can use this library - which basically does the above.
+
+ ## One Solution
+
+ If your Options instance has a "List" (or Array) of items, and you only care to know what the delta's are between the old items list and the new list, then you can use this library - which basically compares the two lists, comparing "Key" properties on the items to ascertain which ones have been added, removed, or modified.
 
 Example:
 
 ```csharp
 public class MyOptions
 {
-
     public List<Thing> Things { get; set; } // You want to be notified of the delta's'
 }
 
@@ -51,13 +53,14 @@ Then in startup:
  services.AddOptions();
  services.AddLogging();
 
- services.Configure<MyOptions>(config);
- services.AddOptionsItemChangesMonitor<MyOptions, Thing, string>((o) => o.Things);
+ services.Configure<MyOptions>(config); // configure your options as normal.
+ services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.Things);
 
 ```
 
-Note: the third generic type argument `string` in the example above, is the type of the `Key` property that exists on each item. In this case we used a `string`.
-Now you can now inject an "items level" monitor to listen for delta's in this list:
+Note: the third generic type argument `string` in the example above, is the type for the `Key` property that exists on each item in your list.
+In this case we use a `string` and our `Thing` class implements `IHaveKey<string>`.
+Now you can now inject an "items level" monitor to be notified of delta's in the list:
 
 ```csharp
 public class MyService
@@ -88,32 +91,23 @@ Suppose your options class has multiple lists:
 public class MyOptions
 {
 
-    public List<Thing> Things { get; set; } // You want to be notified of the delta's'
+    public List<Thing> Things { get; set; }
 
-    public List<Thing> OtherThings { get; set; } // You want to be notified of the delta's'
+    public List<Thing> OtherThings { get; set; } 
 
 }
 
 ```
 
-You can listen to changes in muliple list properties of the same item type:
+You can listen to deltas in both lists and know which list was changed:
 
 ```csharp
- services.AddOptionsItemChangesMonitor<MyOptions, Thing, string>((o) => o.Things, (o) => o.OtherThings);
+ services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.Things);
+ services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.OtherThings);
 
 ```
 
-Or different item type:
-
-```
- services.AddOptionsItemChangesMonitor<MyOptions, Thing, string>((o) => o.Things, (o) => o.OtherThings);
- services.AddOptionsItemChangesMonitor<MyOptions, DifferentThing, string>((o) => o.DifferentThings);
-
-```
-
-To distinguish between which list changed when using different properties of the same type, 
-check "MemberName" argument:
-
+Then check the "MemberName" property when being notified of changes
 ```csharp
 public class MyService
 {
