@@ -79,9 +79,10 @@ public class MyService
         });
    }
 }
+```
 
-
-Suppose your options class has multiple lists:
+Suppose your options class has multiple list properties of the same type.
+You want to track all of them.
 
 
 ```csharp
@@ -96,14 +97,30 @@ public class MyOptions
 
 ```
 
-You can listen to changes in muliple list properties of the same item type:
+You can listen to changes in muliple list / array properties of the same item type like so:
 
 ```csharp
- services.AddOptionsItemChangesMonitor<MyOptions, Thing, string>((o) => o.Things, (o) => o.OtherThings);
+ services.AddOptionsItemChangesMonitor<MyOptions, Thing, string>(
+    (o) => o.Things, (o) => o.OtherThings);
 
 ```
 
-Or different item type:
+Here is another example where you have multiple list properties of the same type, and another of a different type:
+
+```
+public class MyOptions
+{
+
+    public List<Thing> Things { get; set; } 
+
+    public List<Thing> OtherThings { get; set; } 
+
+    public List<DifferentThing> DifferentThings { get; set; }
+
+}
+```
+
+You'd register like:
 
 ```
  services.AddOptionsItemChangesMonitor<MyOptions, Thing, string>((o) => o.Things, (o) => o.OtherThings);
@@ -111,7 +128,7 @@ Or different item type:
 
 ```
 
-To distinguish between which list changed when using different properties of the same type, 
+To distinguish between which list changed when listening to multiple lists of the same type, 
 check "MemberName" argument:
 
 ```csharp
