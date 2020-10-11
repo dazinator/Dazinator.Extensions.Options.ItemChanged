@@ -50,7 +50,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
             foreach (var itemsEnumerable in _itemAccessors)
             {
                 var changes = _differ.GetChanges(_instance, newInstance, itemsEnumerable.GetItems).ToList();
-                if(!changes.Any())
+                if (!changes.Any())
                 {
                     continue;
                 }
@@ -78,7 +78,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
                             deletes.Add(item.Item1);
                             continue;
                     }
-                }               
+                }
 
                 var args = new OptionsItemChangedEventArgs<TKey, TOptionsItem>()
                 {

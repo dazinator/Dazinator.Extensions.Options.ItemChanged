@@ -167,7 +167,7 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
             var sp = services.BuildServiceProvider();
             var itemMonitor = sp.GetRequiredService<IOptionsItemChangesMonitor<string, TestItemOptions>>();
 
-        //    var autoEvent = new AutoResetEvent(false);
+            //    var autoEvent = new AutoResetEvent(false);
             var autoEventAddedA = new AutoResetEvent(false);
             var autoEventAddedOtherItem = new AutoResetEvent(false);
 
@@ -191,12 +191,12 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
 
                     autoEventAddedA.Set();
 
-                }               
+                }
                 else if (called == 1)
                 {
                     Assert.Equal(nameof(TestOptions.OtherItems), changes.MemberName);
                     // Assert we added new item to OtherItems.
-                    var added = changes.Changes[ItemChangeType.Added];                  
+                    var added = changes.Changes[ItemChangeType.Added];
                     Assert.Single(added);
                     autoEventAddedOtherItem.Set();
                 }

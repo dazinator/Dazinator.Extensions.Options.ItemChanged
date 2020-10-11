@@ -14,7 +14,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
 
             services.AddSingleton<IOptionsItemChangesMonitor<TKey, TOptionsItem>>((sp) =>
             {
-                var accessors = itemsAccessors.Select((exp) =>CreateItemsAccessor<TOptions, TOptionsItem, TKey>(exp));
+                var accessors = itemsAccessors.Select((exp) => CreateItemsAccessor<TOptions, TOptionsItem, TKey>(exp));
                 var instance = ActivatorUtilities.CreateInstance<OptionsItemChangesMonitor<TKey, TOptions, TOptionsItem>>(sp, accessors);
                 return instance;
             });

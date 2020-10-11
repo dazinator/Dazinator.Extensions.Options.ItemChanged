@@ -31,7 +31,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
                 {
                     yield return new Tuple<TOptionsItem, ItemChangeType>(item, ItemChangeType.Modified);
                     continue;
-                }               
+                }
             }
 
             foreach (var notFound in oldDictionary)

@@ -4,7 +4,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
     using System.Collections.Generic;
 
     public class KeyedItemsAccessor<TInstance, TItem, TKey>
-        where TItem: IHaveKey<TKey>
+        where TItem : IHaveKey<TKey>
     {
         public string MemberName { get; set; }
 
