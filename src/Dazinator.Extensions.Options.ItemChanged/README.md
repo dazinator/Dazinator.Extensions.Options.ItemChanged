@@ -39,7 +39,7 @@ public class MyOptions
     public List<Thing> Things { get; set; } // You want to be notified of the delta's'
 }
 
-pubic class Thing : IHaveKey<string> // Your items must have a "Key" property - you are free to choose the type for the key.
+pubic class Thing 
 {    
   public string Key { get; set; }
 }
@@ -54,12 +54,10 @@ Then in startup:
  services.AddLogging();
 
  services.Configure<MyOptions>(config); // configure your options as normal.
- services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.Things);
+ services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.Key, (o) => o.Things);
 
 ```
 
-Note: the third generic type argument `string` in the example above, is the type for the `Key` property that exists on each item in your list.
-In this case we use a `string` and our `Thing` class implements `IHaveKey<string>`.
 Now you can now inject an "items level" monitor to be notified of delta's in the list:
 
 ```csharp
@@ -69,16 +67,24 @@ public class MyService
    {
         itemsMonitor.OnChange((deltas) =>
         {
-            // added is a list of `Thing`'s that were present in the new Items list compared to the old one, based on new keys being found.
-            var added = deltas.Changes[ItemChangeType.Added];
-            
-            // is a list of `Thing`'s that were present in the old Items list but not in the new list, based on old keys no longer found.
-            var removed = deltas.Changes[ItemChangeType.Removed];
+            foreach (var item in deltas.Differences)
+            {
+               var currentItem = item.CurrentItem;
+               var oldItem = item.OldItem;
 
-            // is a list of `Thing`'s that were present in both old and new items list (based on key matches in both lists) but equality comparison failed between the matching items.
-            // You can override Equals() on your Thing() class to take control over this.
-            var updated = deltas.Changes[ItemChangeType.Modified];               
-
+               switch(item.ChangeType)
+               {
+                   case ItemChangeType.Added:
+                       DoSomethingWithNewItem(currentItem);
+                       break;
+                   case ItemChangeType.Removed:
+                       DoSomeCleanupOnOldItem(oldItem);
+                       break;
+                   case ItemChangeType.Modified:
+                       ComputeSomeChangesToItem(currentItem, oldItem);
+                       break;
+               }
+            }            
         });
    }
 }
@@ -99,11 +105,11 @@ public class MyOptions
 
 ```
 
-You can listen to deltas in both lists and know which list was changed:
+You can track multiple list members of the same type (In this case, `.Things` and `.OtherThings`):
 
 ```csharp
- services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.Things);
- services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.OtherThings);
+ services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.Key,
+        (o) => o.Things, (o) => o.OtherThings);
 
 ```
 

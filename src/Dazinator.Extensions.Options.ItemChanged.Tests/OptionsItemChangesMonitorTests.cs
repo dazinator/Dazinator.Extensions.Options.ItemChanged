@@ -2,9 +2,11 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
 {
     using System;
     using System.Collections.Generic;
+    using System.Data;
     using System.Diagnostics;
     using System.Linq;
     using System.Linq.Expressions;
+    using System.Net.Http.Headers;
     using System.Threading;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Options;
@@ -85,29 +87,31 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
                 }
             });
 
-            services.AddOptionsItemChangeMonitor<TestOptions, TestItemOptions, string>((o) => o.Items);
+            services.AddOptionsItemChangeMonitor<TestOptions, TestItemOptions, string>(o => o.Key, (o) => o.Items);
 
 
             var sp = services.BuildServiceProvider();
-            var itemMonitor = sp.GetRequiredService<IOptionsItemChangesMonitor<string, TestItemOptions>>();
+            var itemMonitor = sp.GetRequiredService<IOptionsItemsChangedMonitor<string, TestItemOptions>>();
 
             var autoEvent = new AutoResetEvent(false);
 
             itemMonitor.OnChange((changes) =>
             {
                 Assert.Equal("Items", changes.MemberName);
-                var added = changes.Changes[ItemChangeType.Added];
-                Assert.Single(added);
-                var addedItem = added.First();
-                Assert.Equal("B", addedItem.Key);
+                Assert.Equal(2, changes.Differences.Count);
 
-                var removed = changes.Changes[ItemChangeType.Removed];
-                Assert.Single(removed);
-                var removedItem = removed.First();
-                Assert.Equal("A", removedItem.Key);
+                //var added = changes.Differences[ItemChangeType.Added];
+                //Assert.Equal(changes.Differences.Contains();
+                //var addedItem = added.First();
+                //Assert.Equal("B", addedItem.Key);
 
-                var updated = changes.Changes[ItemChangeType.Modified];
-                Assert.Empty(updated);
+                //var removed = changes.Changes[ItemChangeType.Removed];
+                //Assert.Single(removed);
+                //var removedItem = removed.First();
+                //Assert.Equal("A", removedItem.Key);
+
+                //var updated = changes.Changes[ItemChangeType.Modified];
+                //Assert.Empty(updated);
 
                 autoEvent.Set();
             });
@@ -160,12 +164,12 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
                 }
             });
 
-            services.AddOptionsItemChangeMonitor<TestOptions, TestItemOptions, string>(
+            services.AddOptionsItemChangeMonitor<TestOptions, TestItemOptions, string>(o => o.Key,
                 (o) => o.Items,
                 (o) => o.OtherItems);
 
             var sp = services.BuildServiceProvider();
-            var itemMonitor = sp.GetRequiredService<IOptionsItemChangesMonitor<string, TestItemOptions>>();
+            var itemMonitor = sp.GetRequiredService<IOptionsItemsChangedMonitor<string, TestItemOptions>>();
 
             //    var autoEvent = new AutoResetEvent(false);
             var autoEventAddedA = new AutoResetEvent(false);
@@ -180,14 +184,16 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
                     Assert.Equal(nameof(TestOptions.Items), changes.MemberName);
 
                     callCount = 1;
-                    var added = changes.Changes[ItemChangeType.Added];
-                    Assert.Single(added);
+                    Assert.Single(changes.Differences);
 
-                    var removed = changes.Changes[ItemChangeType.Removed];
-                    Assert.Empty(removed);
+                    //var added = changes.Changes[ItemChangeType.Added];
+                    //Assert.Single(added);
 
-                    var updated = changes.Changes[ItemChangeType.Modified];
-                    Assert.Empty(updated);
+                    //var removed = changes.Changes[ItemChangeType.Removed];
+                    //Assert.Empty(removed);
+
+                    //var updated = changes.Changes[ItemChangeType.Modified];
+                    //Assert.Empty(updated);
 
                     autoEventAddedA.Set();
 
@@ -196,8 +202,10 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
                 {
                     Assert.Equal(nameof(TestOptions.OtherItems), changes.MemberName);
                     // Assert we added new item to OtherItems.
-                    var added = changes.Changes[ItemChangeType.Added];
-                    Assert.Single(added);
+                    Assert.Single(changes.Differences);
+
+                    //var added = changes.Changes[ItemChangeType.Added];
+                    //Assert.Single(added);
                     autoEventAddedOtherItem.Set();
                 }
                 // callCount = called + 1;
@@ -224,5 +232,43 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
 
         }
 
+
+
     }
+
+    //public static class EnumerableExtensions
+    //{
+    //    public IEnumerable<Tuple<TItem, ItemChangeType>> GetChanges(IEnumerable<TItem> originalOptions, TOptions newOptions, Func<TOptions, IEnumerable<TOptionsItem>> itemsAccessor)
+    //    {
+    //        var oldItems = itemsAccessor(originalOptions);
+    //        var oldDictionary = oldItems.ToDictionary(a => a.Key, b => b);
+
+    //        //originalOptions.Mappings.ToDictionary(a => a.Key, b => b);
+    //        var newItems = itemsAccessor(newOptions);
+    //        foreach (var item in newItems)
+    //        {
+    //            // Is it new?
+    //            if (!oldDictionary.ContainsKey(item.Key))
+    //            {
+    //                yield return new Tuple<TOptionsItem, ItemChangeType>(item, ItemChangeType.Added);
+    //                continue;
+    //            }
+
+    //            // it exists but has it changed?
+    //            var previousItem = oldDictionary[item.Key];
+    //            oldDictionary.Remove(item.Key); // whats left in old, won't be present in new, so therefore is deleted.
+
+    //            if (previousItem != item) // user can override .Equals() to ascertain if the two instances should b seen as equal
+    //            {
+    //                yield return new Tuple<TOptionsItem, ItemChangeType>(item, ItemChangeType.Modified);
+    //                continue;
+    //            }
+    //        }
+
+    //        foreach (var notFound in oldDictionary)
+    //        {
+    //            yield return new Tuple<TOptionsItem, ItemChangeType>(notFound.Value, ItemChangeType.Removed);
+    //        }
+    //    }
+    //}
 }

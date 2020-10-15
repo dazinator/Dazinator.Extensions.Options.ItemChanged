@@ -4,22 +4,23 @@ namespace Dazinator.Extensions.Options.ItemChanged
     using System.Collections.Generic;
     using System.Linq;
 
-    public class OptionsItemsDiffer<TKey, TOptions, TOptionsItem>
-   where TOptionsItem : class, IHaveKey<TKey>
+    public class CollectionDifferUsingInterface<TKey, TItem> : CollectionDiffer<TItem, TItem>
+   where TItem : class, IHaveKey<TKey>
     {
-        public IEnumerable<Tuple<TOptionsItem, ItemChangeType>> GetChanges(TOptions originalOptions, TOptions newOptions, Func<TOptions, IEnumerable<TOptionsItem>> itemsAccessor)
+
+        public override IEnumerable<Difference<TItem, TItem>> GetChanges(IEnumerable<TItem> target, IEnumerable<TItem> original)
         {
-            var oldItems = itemsAccessor(originalOptions);
+            var oldItems = original;
             var oldDictionary = oldItems.ToDictionary(a => a.Key, b => b);
 
             //originalOptions.Mappings.ToDictionary(a => a.Key, b => b);
-            var newItems = itemsAccessor(newOptions);
+            var newItems = target;
             foreach (var item in newItems)
             {
                 // Is it new?
                 if (!oldDictionary.ContainsKey(item.Key))
                 {
-                    yield return new Tuple<TOptionsItem, ItemChangeType>(item, ItemChangeType.Added);
+                    yield return new Difference<TItem, TItem>() { CurrentItem = item, OldItem = null };
                     continue;
                 }
 
@@ -29,14 +30,14 @@ namespace Dazinator.Extensions.Options.ItemChanged
 
                 if (previousItem != item) // user can override .Equals() to ascertain if the two instances should b seen as equal
                 {
-                    yield return new Tuple<TOptionsItem, ItemChangeType>(item, ItemChangeType.Modified);
+                    yield return new Difference<TItem, TItem>() { CurrentItem = item, OldItem = previousItem };
                     continue;
                 }
             }
 
             foreach (var notFound in oldDictionary)
             {
-                yield return new Tuple<TOptionsItem, ItemChangeType>(notFound.Value, ItemChangeType.Removed);
+                yield return new Difference<TItem, TItem>() { CurrentItem = null, OldItem = notFound.Value };
             }
         }
     }
