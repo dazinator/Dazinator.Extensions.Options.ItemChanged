@@ -91,7 +91,7 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
 
 
             var sp = services.BuildServiceProvider();
-            var itemMonitor = sp.GetRequiredService<IOptionsItemsChangedMonitor<string, TestItemOptions>>();
+            var itemMonitor = sp.GetRequiredService<IOptionsItemsChangedMonitor<TestOptions, TestItemOptions, string>>();
 
             var autoEvent = new AutoResetEvent(false);
 
@@ -169,7 +169,7 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
                 (o) => o.OtherItems);
 
             var sp = services.BuildServiceProvider();
-            var itemMonitor = sp.GetRequiredService<IOptionsItemsChangedMonitor<string, TestItemOptions>>();
+            var itemMonitor = sp.GetRequiredService<IOptionsItemsChangedMonitor<TestOptions, TestItemOptions, string>>();
 
             //    var autoEvent = new AutoResetEvent(false);
             var autoEventAddedA = new AutoResetEvent(false);

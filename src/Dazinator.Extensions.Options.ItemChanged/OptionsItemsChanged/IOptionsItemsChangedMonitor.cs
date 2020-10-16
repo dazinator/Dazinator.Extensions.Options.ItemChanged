@@ -2,8 +2,8 @@ namespace Dazinator.Extensions.Options.ItemChanged
 {
     using System;
 
-    public interface IOptionsItemsChangedMonitor<TKey, TOptionsItem> where TOptionsItem : class
+    public interface IOptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey> where TOptionsItem : class
     {
-        IDisposable OnChange(Action<OptionsItemsChangedEventArgs<TKey, TOptionsItem>> listener);
+        IDisposable OnChange(Action<OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey>> listener);
     }
 }

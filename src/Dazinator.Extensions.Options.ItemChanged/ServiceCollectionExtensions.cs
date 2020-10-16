@@ -18,11 +18,11 @@ namespace Dazinator.Extensions.Options.ItemChanged
         public static IServiceCollection AddOptionsItemChangeMonitor<TOptions, TOptionsItem, TKey>(this IServiceCollection services, Func<TOptionsItem, TKey> keySelector, params Expression<Func<TOptions, IEnumerable<TOptionsItem>>>[] itemsAccessors)
     where TOptionsItem : class
         {
-            services.AddSingleton<IOptionsItemsChangedMonitor<TKey, TOptionsItem>>((sp) =>
+            services.AddSingleton<IOptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey>>((sp) =>
             {
                 var itemsDiffer = new CollectionDifferUsingKeyExpression<TOptionsItem, TOptionsItem, TKey>(keySelector, keySelector);
                 var accessors = itemsAccessors.Select((exp) => CreateItemsAccessor<TOptions, TOptionsItem, TKey>(exp));
-                var instance = ActivatorUtilities.CreateInstance<OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem>>(sp, itemsDiffer, accessors);
+                var instance = ActivatorUtilities.CreateInstance<OptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey>>(sp, itemsDiffer, accessors);
                 return instance;
             });
 
@@ -32,11 +32,11 @@ namespace Dazinator.Extensions.Options.ItemChanged
         public static IServiceCollection AddOptionsItemChangeMonitor<TOptions, TOptionsItem, TKey>(this IServiceCollection services, params Expression<Func<TOptions, IEnumerable<TOptionsItem>>>[] itemsAccessors)
    where TOptionsItem : class, IHaveKey<TKey>
         {
-            services.AddSingleton<IOptionsItemsChangedMonitor<TKey, TOptionsItem>>((sp) =>
+            services.AddSingleton<IOptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey>>((sp) =>
             {
                 var itemsDiffer = new CollectionDifferUsingInterface<TOptionsItem, TKey>();
                 var accessors = itemsAccessors.Select((exp) => CreateItemsAccessor<TOptions, TOptionsItem, TKey>(exp));
-                var instance = ActivatorUtilities.CreateInstance<OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem>>(sp, itemsDiffer, accessors);
+                var instance = ActivatorUtilities.CreateInstance<OptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey>>(sp, itemsDiffer, accessors);
                 return instance;
             });
 

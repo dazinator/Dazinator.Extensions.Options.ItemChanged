@@ -7,15 +7,15 @@ namespace Dazinator.Extensions.Options.ItemChanged
     using Microsoft.Extensions.Options;
     using Microsoft.Extensions.Primitives;
 
-    public class OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem> : OptionsChangedMonitor<TOptions>,
-        IDisposable, IOptionsItemsChangedMonitor<TKey, TOptionsItem>
+    public class OptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey> : OptionsChangedMonitor<TOptions>,
+        IDisposable, IOptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey>
         where TOptionsItem : class
     {
-        private readonly ILogger<OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem>> _logger;
+        private readonly ILogger<OptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey>> _logger;
         private readonly List<ItemsMemberAccessor<TOptions, TOptionsItem>> _itemAccessors;
         private readonly IDisposable _listening;
 
-        internal event Action<OptionsItemsChangedEventArgs<TKey, TOptionsItem>> OnItemChange;
+        internal event Action<OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey>> OnItemChange;
         private readonly ICollectionDiffer<TOptionsItem, TOptionsItem> _differ;
         private TOptions _instance;
 
@@ -24,7 +24,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
 
         public OptionsItemsChangedMonitor(
             IOptionsMonitor<TOptions> optionsMonitor,
-            ILogger<OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem>> logger,
+            ILogger<OptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey>> logger,
             IEnumerable<ItemsMemberAccessor<TOptions, TOptionsItem>> itemAccessors,
             ICollectionDiffer<TOptionsItem, TOptionsItem> differ
            ) : base(optionsMonitor)
@@ -62,8 +62,10 @@ namespace Dazinator.Extensions.Options.ItemChanged
                     continue;
                 }
 
-                var args = new OptionsItemsChangedEventArgs<TKey, TOptionsItem>()
+                var args = new OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey>()
                 {
+                    Old = _instance,
+                    Current = newInstance,
                     MemberName = itemsEnumerable.MemberName,
                     Differences = new HashSet<Difference<TOptionsItem, TOptionsItem>>(differences)
                 };
@@ -74,7 +76,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
         }
 
 
-        private void InvokeChanged(OptionsItemsChangedEventArgs<TKey, TOptionsItem> args)
+        private void InvokeChanged(OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey> args)
         {
             if (OnItemChange != null)
             {
@@ -83,11 +85,11 @@ namespace Dazinator.Extensions.Options.ItemChanged
         }
 
         /// <summary>
-        /// Registers a listener to be called whenever a mapping item on <see cref="MappingOptions{TKey, TOptions}"/> changes.
+        /// Registers a listener to be called whenever items change.
         /// </summary>
         /// <param name="listener">The action to be invoked when whenever a mapping item on <see cref="MappingOptions{TKey, TOptions}"/> changes.</param>
         /// <returns>An <see cref="IDisposable"/> which should be disposed to stop listening for changes.</returns>
-        public IDisposable OnChange(Action<OptionsItemsChangedEventArgs<TKey, TOptionsItem>> listener)
+        public IDisposable OnChange(Action<OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey>> listener)
         {
             var disposable = new ChangeTrackerDisposable(this, listener);
             OnItemChange += disposable.OnItemChange;
@@ -98,16 +100,16 @@ namespace Dazinator.Extensions.Options.ItemChanged
 
         internal class ChangeTrackerDisposable : IDisposable
         {
-            private readonly Action<OptionsItemsChangedEventArgs<TKey, TOptionsItem>> _listener;
-            private readonly OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem> _monitor;
+            private readonly Action<OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey>> _listener;
+            private readonly OptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey> _monitor;
 
-            public ChangeTrackerDisposable(OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem> monitor, Action<OptionsItemsChangedEventArgs<TKey, TOptionsItem>> listener)
+            public ChangeTrackerDisposable(OptionsItemsChangedMonitor<TOptions, TOptionsItem, TKey> monitor, Action<OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey>> listener)
             {
                 _listener = listener;
                 _monitor = monitor;
             }
 
-            public void OnItemChange(OptionsItemsChangedEventArgs<TKey, TOptionsItem> args) => _listener.Invoke(args);
+            public void OnItemChange(OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey> args) => _listener.Invoke(args);
 
             public void Dispose() => _monitor.OnItemChange -= OnItemChange;
         }

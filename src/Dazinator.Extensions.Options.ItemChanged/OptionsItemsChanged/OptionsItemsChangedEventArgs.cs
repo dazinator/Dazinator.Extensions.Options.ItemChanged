@@ -3,7 +3,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
     using System;
     using System.Collections.Generic;
 
-    public class OptionsItemsChangedEventArgs<TKey, TOptionsItem> : EventArgs
+    public class OptionsItemsChangedEventArgs<TOptions, TOptionsItem, TKey> : OptionsChangedEventArgs<TOptions>
     {
         public OptionsItemsChangedEventArgs()
         {

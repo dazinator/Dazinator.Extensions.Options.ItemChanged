@@ -113,7 +113,7 @@ The expression based approach is more flexible and doesn't require any type chan
 
 ## IOptionsItemChangesMonitor
 
-If all you care about is being notified of differences on an items / list / array property, you can call `AddOptionsItemChangeMonitor()` to register this as a service in its own right:
+If you care about being notified of differences on an items / list / array property, you can call `AddOptionsItemChangeMonitor()` to register this as a service in its own right:
 
 
 ```csharp
@@ -135,10 +135,15 @@ public class MyService
    {
         itemsMonitor.OnChange((deltas) =>
         {
+            // You still have access to the old and new TOptions instance here:
+            var oldOptions = deltas.Old;
+            var newOptions = delats.Current;
+
+            // But now also the "differences" between the `Things` are available
             foreach (var item in deltas.Differences)
             {
-               var currentItem = item.CurrentItem;
-               var oldItem = item.OldItem;
+               var currentItem = item.CurrentItem; // will be null if item removed.
+               var oldItem = item.OldItem; // will be null if item added.
 
                switch(item.ChangeType)
                {
@@ -158,7 +163,8 @@ public class MyService
 }
 ```
 
-The downside of doing it this way is you won't have access to the "new" and "old" TOptions instances themselves - only the item differences (This is still very fluid - i'll probably change that soon).
+The downside of doing it this way is this callback is only fired when there are actually some differences on the items to report.
+So if you also need to respond to other property changes (not items) then this mechanism won't be for you.
 
 If your `TOptions` class has multiple list / array properties of the same item type like this:
 
@@ -182,7 +188,7 @@ You can still track changes for multiple lists / arrays of the same type with on
 
 ```
 
-Then ise the "MemberName" property when being notified of item changes:
+Then use the "MemberName" property when being notified of item changes:
 
 ```csharp
 public class MyService
