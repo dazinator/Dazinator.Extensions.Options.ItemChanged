@@ -4,7 +4,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
     using System.Collections.Generic;
     using System.Linq;
 
-    public class CollectionDifferUsingInterface<TKey, TItem> : CollectionDiffer<TItem, TItem>
+    public class CollectionDifferUsingInterface<TItem, TKey> : CollectionDiffer<TItem, TItem>
    where TItem : class, IHaveKey<TKey>
     {
 

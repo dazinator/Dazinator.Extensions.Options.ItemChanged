@@ -1,9 +1,50 @@
 ## The problem
 
-`Microsoft.Extensions.Options` let's you configure an options class.
-This could have a collection of items:
+`Microsoft.Extensions.Options` provides `IOptionsMonitor<TOptions>` with which you can be notified of a new TOptions when configuration changes.
 
-```csharp
+However:
+
+1. The callback it fires doesn't tell you what the previous instance was so you can't do any diffing to work out what precisely has changed.
+2. Options classes can have members that are lists / arrays of items. Suppose you want to quickly determine whether new items have been added, or existing ones removed or modified - there is no easy mechanism to do that.
+
+
+## Solution
+
+The solution is most likely to create your own "service" that caches the current Options instance, and then listens for changes, and then does your diffing logic between the cached instance and the new instance when they occur.
+This is pretty much what this library provides, by way of a few services and utility classes - but this library only provides some very basic stuff right now.
+
+### Get notified of old and new instance
+
+Configure your options as normal and then register the following service:
+
+```
+   services.AddOptionsChangedMonitor<TestOptions>();
+
+```
+
+You can now inject `IOptionsChangedMonitor<TestOptions>` and register a callback via its `OnChange` method - to be notified when your TOptions changes but also to be given the old instance, not just the new instance.
+```
+
+  var itemMonitor = sp.GetRequiredService<IOptionsChangedMonitor<TestOptions>>(); // inject this
+  itemMonitor.OnChange((changes) =>
+  {                
+      var old = changes.Old;
+      Assert.Equal("A", old.Items[0].Key);
+
+      var current = changes.Current;
+      Assert.Equal("B", current.Items[0].Key);
+  });
+
+
+```
+
+At the most basic level you can now do whatever diffing logic you need in this callback - I have added a coupld of utility classes in the library though.
+
+## Comparing Arrays
+
+Suppose your `Options` class has a property that is an Array or List
+
+``csharp
 public class MyOptions
 {
     public MyOptions()
@@ -14,39 +55,62 @@ public class MyOptions
     public List<Thing> Things { get; set; }
 }
 
-```
-
-You can then use `IOptionsMonitor<MyOptions>` to listen for new instances of `MyOptions` when there is some change at runtime (like a configuration change).
-
-However suppose when the configuration changes, you want to know which `Thing` in the `Things` list was changed since the previous list? 
- - Are there new Items present that weren't present before?
- - Are there existing items that were present before but have now changed?
- - Are there items that were present before but have now been removed?
-
- You can achieve this by creating your own service that caches your current Options instance, and then whenever you are passed a changed instance from `IOptionsMonitor` - do your own `diffing` mechanism to work out
- what the differences are between the old item and the new item and then take some actions based on those differences.
- 
-
- ## One Solution
-
- If your Options instance has a "List" (or Array) of items, and you only care to know what the delta's are between the old items list and the new list, then you can use this library - which basically compares the two lists, comparing "Key" properties on the items to ascertain which ones have been added, removed, or modified.
-
-Example:
-
-```csharp
-public class MyOptions
+public class Thing 
 {
-    public List<Thing> Things { get; set; } // You want to be notified of the delta's'
-}
-
-pubic class Thing 
-{    
-  public string Key { get; set; }
+        public string Key { get; set; }
 }
 
 ```
 
-Then in startup:
+Suppose when configuration changes, you want to quickly determine which items are now new / modified / removed between the old and new configuration?
+
+You can do this using a utility class called `CollectionDifferUsingKeyExpression` which will return
+you an `IEnumerable<Difference>` when asked to compare two IEnumerable`s matching via a key:
+
+```
+
+  var itemMonitor = sp.GetRequiredService<IOptionsChangedMonitor<MyOptions>>(); // inject this
+  var collectionDiffer = new CollectionDifferUsingKeyExpression<Thing, string>(a => a.Key);
+
+  itemMonitor.OnChange((changes) =>
+  {                
+      var old = changes.Old;
+      var current = changes.Current;
+
+      var differences = collectionDiffer.GetChanges(current.Items, old.Items).ToArray();    
+      
+      foreach (var difference in differences)
+      {
+         var currentItem = difference.CurrentItem;
+         var oldItem = difference.OldItem;
+
+         switch(item.ChangeType)
+         {
+             case ItemChangeType.Added:
+                 ItemAdded(currentItem);
+                 break;
+             case ItemChangeType.Removed:
+                 ItemRemoved(oldItem);
+                 break;
+             case ItemChangeType.Modified:
+                 ItemModified(currentItem, oldItem);
+                 break;
+         }
+
+      }
+
+  });
+
+
+```
+
+It basically just matches between the two arrays using the nominated property value as the matching key - then returns an IEnumerable of the differences that have been detected - which are either that a new item is added, or an old item was removed, or existing matched items (same key) are different (equality comparison fails).
+
+
+## IOptionsItemChangesMonitor
+
+If all you care about is being notified of item differences, you can call `AddOptionsItemChangeMonitor()` to register this as a service in its own right:
+
 
 ```csharp
  // pre-requisites.
@@ -90,8 +154,9 @@ public class MyService
 }
 ```
 
-Suppose your options class has multiple lists:
+The downside of doing it this way is you won't have access to the old TOptions and new TOptions instances, only the item differences.
 
+If you `TOptions` class has multiple list / array properties of the same type like this:
 
 ```csharp
 public class MyOptions
@@ -105,7 +170,7 @@ public class MyOptions
 
 ```
 
-You can track multiple list members of the same type (In this case, `.Things` and `.OtherThings`):
+You can track multiple lists / arrays of the same type like so (In this case, `.Things` and `.OtherThings`):
 
 ```csharp
  services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.Key,
@@ -133,3 +198,5 @@ public class MyService
    }
 }
 ```
+
+Note: this library is of fairly limited use, it doesn't currently work with "named" options, it serves a fairly niche scenario of my own, let me know if you have any suggestions or ideas for improvements.

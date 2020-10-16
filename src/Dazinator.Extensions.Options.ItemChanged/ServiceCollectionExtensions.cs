@@ -9,9 +9,15 @@ namespace Dazinator.Extensions.Options.ItemChanged
 
     public static class ServiceCollectionExtensions
     {
+        public static IServiceCollection AddOptionsChangedMonitor<TOptions>(this IServiceCollection services)
+        {
+            services.AddSingleton<IOptionsChangedMonitor<TOptions>, OptionsChangedMonitor<TOptions>>();
+            return services;
+        }
+
         public static IServiceCollection AddOptionsItemChangeMonitor<TOptions, TOptionsItem, TKey>(this IServiceCollection services, Func<TOptionsItem, TKey> keySelector, params Expression<Func<TOptions, IEnumerable<TOptionsItem>>>[] itemsAccessors)
-    where TOptionsItem : class, IHaveKey<TKey>
-        {          
+    where TOptionsItem : class
+        {
             services.AddSingleton<IOptionsItemsChangedMonitor<TKey, TOptionsItem>>((sp) =>
             {
                 var itemsDiffer = new CollectionDifferUsingKeyExpression<TOptionsItem, TOptionsItem, TKey>(keySelector, keySelector);
@@ -23,8 +29,21 @@ namespace Dazinator.Extensions.Options.ItemChanged
             return services;
         }
 
+        public static IServiceCollection AddOptionsItemChangeMonitor<TOptions, TOptionsItem, TKey>(this IServiceCollection services, params Expression<Func<TOptions, IEnumerable<TOptionsItem>>>[] itemsAccessors)
+   where TOptionsItem : class, IHaveKey<TKey>
+        {
+            services.AddSingleton<IOptionsItemsChangedMonitor<TKey, TOptionsItem>>((sp) =>
+            {
+                var itemsDiffer = new CollectionDifferUsingInterface<TOptionsItem, TKey>();
+                var accessors = itemsAccessors.Select((exp) => CreateItemsAccessor<TOptions, TOptionsItem, TKey>(exp));
+                var instance = ActivatorUtilities.CreateInstance<OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem>>(sp, itemsDiffer, accessors);
+                return instance;
+            });
+
+            return services;
+        }
+
         private static ItemsMemberAccessor<TOptions, TOptionsItem> CreateItemsAccessor<TOptions, TOptionsItem, TKey>(Expression<Func<TOptions, IEnumerable<TOptionsItem>>> expression)
-            where TOptionsItem : IHaveKey<TKey>
         {
             var body = expression.Body;
             var member = body as MemberExpression;

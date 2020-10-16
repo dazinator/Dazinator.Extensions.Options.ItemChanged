@@ -1,5 +1,9 @@
 namespace Dazinator.Extensions.Options.ItemChanged
 {
+    public class Difference<TItem>: Difference<TItem, TItem>
+    {
+
+    }
     public class Difference<TCurrent, TOriginal>
     {
         public TCurrent CurrentItem { get; set; }
@@ -8,12 +12,12 @@ namespace Dazinator.Extensions.Options.ItemChanged
         {
             get
             {
-                if(CurrentItem == null)
+                if (CurrentItem == null)
                 {
                     return ItemChangeType.Removed;
                 }
 
-                if(OldItem == null)
+                if (OldItem == null)
                 {
                     return ItemChangeType.Added;
                 }

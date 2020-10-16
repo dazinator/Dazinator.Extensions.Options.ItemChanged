@@ -4,6 +4,13 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
     using System.Collections.Generic;
     using System.Linq;
 
+    public class CollectionDifferUsingKeyExpression<TItem, TKey> : CollectionDifferUsingKeyExpression<TItem, TItem, TKey> where TItem : class
+    {
+        public CollectionDifferUsingKeyExpression(Func<TItem, TKey> targetKeySelector) : base(targetKeySelector, targetKeySelector)
+        {
+        }
+    }
+
     public class CollectionDifferUsingKeyExpression<TCurrentItem, TOriginalItem, TKey> : CollectionDiffer<TCurrentItem, TOriginalItem> where TCurrentItem : class
         where TOriginalItem : class
     {

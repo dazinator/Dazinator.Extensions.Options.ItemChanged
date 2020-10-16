@@ -13,7 +13,7 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
     using Microsoft.Extensions.Primitives;
     using Xunit;
 
-    public class OptionsItemChangesMonitorTests
+    public class OptionsItemsChangedMonitorTests
     {
 
         public class TestOptionsChangeTokenSource : IOptionsChangeTokenSource<TestOptions>
