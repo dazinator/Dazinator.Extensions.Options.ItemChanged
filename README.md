@@ -17,34 +17,35 @@ This is pretty much what this library provides, by way of a few services and uti
 
 Configure your options as normal and then register the following service:
 
-```
+```csharp
    services.AddOptionsChangedMonitor<TestOptions>();
 
 ```
 
 You can now inject `IOptionsChangedMonitor<TestOptions>` and register a callback via its `OnChange` method - to be notified when your TOptions changes but also to be given the old instance, not just the new instance.
-```
+```csharp
 
   var itemMonitor = sp.GetRequiredService<IOptionsChangedMonitor<TestOptions>>(); // inject this
   itemMonitor.OnChange((changes) =>
   {                
       var old = changes.Old;
-      Assert.Equal("A", old.Items[0].Key);
 
       var current = changes.Current;
-      Assert.Equal("B", current.Items[0].Key);
+      Assert.NotEqual(current, old);
   });
 
 
 ```
 
-At the most basic level you can now do whatever diffing logic you need in this callback - I have added a coupld of utility classes in the library though.
+At the most basic level you can now do whatever diffing logic you need in this callback - I have only added a basic utility class for diffing arrays / lists at present.
+
+Note: This project is very much in it's infancy and "Idea" stage, heavily subject to change and - may not even be that useful :-)
 
 ## Comparing Arrays
 
 Suppose your `Options` class has a property that is an Array or List
 
-``csharp
+```csharp
 public class MyOptions
 {
     public MyOptions()
@@ -62,12 +63,12 @@ public class Thing
 
 ```
 
-Suppose when configuration changes, you want to quickly determine which items are now new / modified / removed between the old and new configuration?
+When configuration changes, you want to identify what items are new, modified, or removed.
 
 You can do this using a utility class called `CollectionDifferUsingKeyExpression` which will return
 you an `IEnumerable<Difference>` when asked to compare two IEnumerable`s matching via a key:
 
-```
+```csharp
 
   var itemMonitor = sp.GetRequiredService<IOptionsChangedMonitor<MyOptions>>(); // inject this
   var collectionDiffer = new CollectionDifferUsingKeyExpression<Thing, string>(a => a.Key);
@@ -104,12 +105,15 @@ you an `IEnumerable<Difference>` when asked to compare two IEnumerable`s matchin
 
 ```
 
-It basically just matches between the two arrays using the nominated property value as the matching key - then returns an IEnumerable of the differences that have been detected - which are either that a new item is added, or an old item was removed, or existing matched items (same key) are different (equality comparison fails).
+It's called `CollectionDifferUsingKeyExpression` because you pass in an expression that selects the property to use for the "Key" to match with.
+There is another called `CollectionDifferUsingInterface` which enforces instead that your item class implements an interface: `IHaveKey<TKey>` which forces a `.Key` property of that type.
+The expression based approach is more flexible and doesn't require any type changes.
 
+ `CollectionDifferUsingKeyExpression` and `CollectionDifferUsingInterface` are both `CollectionDiffer`'s and their responsibility is to compare two IEnumerable's and report on the differences in terms of New, Removed, or Modified items.
 
 ## IOptionsItemChangesMonitor
 
-If all you care about is being notified of item differences, you can call `AddOptionsItemChangeMonitor()` to register this as a service in its own right:
+If all you care about is being notified of differences on an items / list / array property, you can call `AddOptionsItemChangeMonitor()` to register this as a service in its own right:
 
 
 ```csharp
@@ -122,7 +126,7 @@ If all you care about is being notified of item differences, you can call `AddOp
 
 ```
 
-Now you can now inject an "items level" monitor to be notified of delta's in the list:
+and:
 
 ```csharp
 public class MyService
@@ -154,9 +158,9 @@ public class MyService
 }
 ```
 
-The downside of doing it this way is you won't have access to the old TOptions and new TOptions instances, only the item differences.
+The downside of doing it this way is you won't have access to the "new" and "old" TOptions instances themselves - only the item differences (This is still very fluid - i'll probably change that soon).
 
-If you `TOptions` class has multiple list / array properties of the same type like this:
+If your `TOptions` class has multiple list / array properties of the same item type like this:
 
 ```csharp
 public class MyOptions
@@ -170,7 +174,7 @@ public class MyOptions
 
 ```
 
-You can track multiple lists / arrays of the same type like so (In this case, `.Things` and `.OtherThings`):
+You can still track changes for multiple lists / arrays of the same type with one service registration like so (In this case, `.Things` and `.OtherThings`):
 
 ```csharp
  services.AddOptionsItemChangeMonitor<MyOptions, Thing, string>((o) => o.Key,
@@ -178,7 +182,8 @@ You can track multiple lists / arrays of the same type like so (In this case, `.
 
 ```
 
-Then check the "MemberName" property when being notified of changes
+Then ise the "MemberName" property when being notified of item changes:
+
 ```csharp
 public class MyService
 {
@@ -199,4 +204,4 @@ public class MyService
 }
 ```
 
-Note: this library is of fairly limited use, it doesn't currently work with "named" options, it serves a fairly niche scenario of my own, let me know if you have any suggestions or ideas for improvements.
+Note: this library is of fairly limited use at present, it doesn't currently work with "named" options, it serves a fairly niche scenario of my own, let me know if you have any suggestions or ideas for enhancements that you'd like to see.
