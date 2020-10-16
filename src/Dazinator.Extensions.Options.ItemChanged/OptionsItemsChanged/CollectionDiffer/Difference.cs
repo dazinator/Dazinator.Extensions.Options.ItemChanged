@@ -1,6 +1,6 @@
 namespace Dazinator.Extensions.Options.ItemChanged
 {
-    public class Difference<TItem>: Difference<TItem, TItem>
+    public class Difference<TItem> : Difference<TItem, TItem>
     {
 
     }

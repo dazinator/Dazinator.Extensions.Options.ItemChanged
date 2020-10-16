@@ -1,4 +1,4 @@
-﻿namespace Dazinator.Extensions.Options.ItemChanged
+namespace Dazinator.Extensions.Options.ItemChanged
 {
     using System;
 

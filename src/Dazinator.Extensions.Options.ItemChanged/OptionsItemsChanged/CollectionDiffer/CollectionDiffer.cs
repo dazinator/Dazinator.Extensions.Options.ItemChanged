@@ -1,4 +1,4 @@
-﻿namespace Dazinator.Extensions.Options.ItemChanged
+namespace Dazinator.Extensions.Options.ItemChanged
 {
     using System.Collections.Generic;
 
@@ -7,7 +7,7 @@
         where TOriginalItem : class
     {
         public abstract IEnumerable<Difference<TCurrentItem, TOriginalItem>> GetChanges(IEnumerable<TCurrentItem> target, IEnumerable<TOriginalItem> original);
-        
+
 
         protected Difference<TCurrentItem, TOriginalItem> CreateAddedItemDifference(TCurrentItem newItem) => new Difference<TCurrentItem, TOriginalItem>() { CurrentItem = newItem, OldItem = null };
 

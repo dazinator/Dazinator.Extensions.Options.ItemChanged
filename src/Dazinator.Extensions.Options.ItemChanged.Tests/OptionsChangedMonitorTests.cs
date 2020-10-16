@@ -89,7 +89,7 @@ namespace Dazinator.Extensions.Options.ItemChanged.Tests
             var autoEvent = new AutoResetEvent(false);
 
             itemMonitor.OnChange((changes) =>
-            {                
+            {
                 var old = changes.Old;
                 Assert.Equal("A", old.Items[0].Key);
 

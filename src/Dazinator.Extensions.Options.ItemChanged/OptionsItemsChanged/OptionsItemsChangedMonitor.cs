@@ -27,7 +27,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
             ILogger<OptionsItemsChangedMonitor<TKey, TOptions, TOptionsItem>> logger,
             IEnumerable<ItemsMemberAccessor<TOptions, TOptionsItem>> itemAccessors,
             ICollectionDiffer<TOptionsItem, TOptionsItem> differ
-           ):base(optionsMonitor)
+           ) : base(optionsMonitor)
         {
             // _optionsMonitor = optionsMonitor;
             _instance = optionsMonitor.CurrentValue;
