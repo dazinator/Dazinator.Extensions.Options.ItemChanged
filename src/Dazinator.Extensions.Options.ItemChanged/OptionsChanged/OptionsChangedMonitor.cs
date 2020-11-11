@@ -10,9 +10,10 @@ namespace Dazinator.Extensions.Options.ItemChanged
     /// <typeparam name="TOptions"></typeparam>
     public class OptionsChangedMonitor<TOptions> : IDisposable, IOptionsChangedMonitor<TOptions>
     {
-        private TOptions _instance;
         private readonly IDisposable _listening;
         private bool _disposedValue;
+
+        public TOptions Instance { get; private set; }
 
         internal event Action<OptionsChangedEventArgs<TOptions>> OnOptionsChanged;
 
@@ -20,14 +21,14 @@ namespace Dazinator.Extensions.Options.ItemChanged
         {
             var debouncer = new Debouncer(TimeSpan.FromMilliseconds(500));
 
-            _instance = optionsMonitor.CurrentValue;
-            _listening = optionsMonitor.OnChange((a) => debouncer.Debouce(() => OnChanged(a, _instance)));
+            Instance = optionsMonitor.CurrentValue;
+            _listening = optionsMonitor.OnChange((a) => debouncer.Debouce(() => OnChanged(a, Instance)));
         }
 
         protected virtual void OnChanged(TOptions newInstance, TOptions oldInstance)
         {
-            InvokeChanged(new OptionsChangedEventArgs<TOptions>() { Current = newInstance, Old = oldInstance });
-            _instance = newInstance;
+            Instance = newInstance;
+            InvokeChanged(new OptionsChangedEventArgs<TOptions>() { Current = newInstance, Old = oldInstance });            
         }
 
         private void InvokeChanged(OptionsChangedEventArgs<TOptions> args)
