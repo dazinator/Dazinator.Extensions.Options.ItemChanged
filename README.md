@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/darrelltunnell/Public%20Projects/_apis/build/status/dazinator.Dazinator.Extensions.Options.ItemChanged?branchName=develop)](https://dev.azure.com/darrelltunnell/Public%20Projects/_build/latest?definitionId=14&branchName=develop)
+
 ## The problem
 
 `Microsoft.Extensions.Options` provides `IOptionsMonitor<TOptions>` with which you can be notified of a new TOptions when configuration changes.
