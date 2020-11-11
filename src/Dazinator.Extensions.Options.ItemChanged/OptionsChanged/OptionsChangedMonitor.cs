@@ -28,7 +28,7 @@ namespace Dazinator.Extensions.Options.ItemChanged
         protected virtual void OnChanged(TOptions newInstance, TOptions oldInstance)
         {
             Instance = newInstance;
-            InvokeChanged(new OptionsChangedEventArgs<TOptions>() { Current = newInstance, Old = oldInstance });            
+            InvokeChanged(new OptionsChangedEventArgs<TOptions>() { Current = newInstance, Old = oldInstance });
         }
 
         private void InvokeChanged(OptionsChangedEventArgs<TOptions> args)
